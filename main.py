@@ -38,4 +38,4 @@ def handle_message(message):
         bot.reply_to(message, f"❌ كود الخطأ الحقيقي هو: \n{error_info}")
 
 print("جاري تشغيل نظام التشخيص...")
-bot.infinity_polling()
+bot.infinity_polling
