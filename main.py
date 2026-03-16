@@ -1,31 +1,40 @@
 import telebot
 import google.generativeai as genai
 import os
+import http.server
+import socketserver
+import threading
 
-# --- إعدادات البوت ---
-# ملاحظة: سنستخدم متغيرات البيئة لزيادة الأمان
-CHROME_TOKEN = os.getenv("TELEGRAM_TOKEN") 
-GEMINI_API_KEY = os.getenv("GEMINI_KEY")
+# المفاتيح الرسمية الخاصة بك يا كريم
+TELEGRAM_TOKEN = "8772903016:AAHAjzCH2iQ5mDH3OGVEsGE8LCPB9Zc0iXM"
+GEMINI_API_KEY = "AIzaSyDO-EHfb083eyuC04B8r1duQY556sshUs8"
 
-# إعداد الذكاء الاصطناعي 🧠
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-pro')
-
-bot = telebot.TeleBot(CHROME_TOKEN)
-
-# الرد على كلمات الشكر ⚪️
-@bot.message_handler(func=lambda message: any(word in message.text.lower() for word in ['شكرا', 'صحيت', 'يعطيك الصحة']))
-def handle_thanks(message):
-    bot.reply_to(message, "العفو يا غالي! أنا كريم، مدريدي متعصب ⚪️ وفي الخدمة دائماً!")
-
-# الرد العام باستخدام Gemini 🤖
-@bot.message_handler(func=lambda message: True)
-def echo_all(message):
+# تشغيل سيرفر وهمي لتجاوز قيود موقع Render
+def run_dummy_server():
     try:
+        port = int(os.environ.get("PORT", 8080))
+        handler = http.server.SimpleHTTPRequestHandler
+        with socketserver.TCPServer(("", port), handler) as httpd:
+            httpd.serve_forever()
+    except Exception:
+        pass
+
+threading.Thread(target=run_dummy_server, daemon=True).start()
+
+# إعداد ذكاء Gemini (استخدام نسخة Flash الأسرع)
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
+bot = telebot.TeleBot(TELEGRAM_TOKEN)
+
+@bot.message_handler(func=lambda message: True)
+def handle_message(message):
+    try:
+        # إرسال الرسالة لذكاء جوجل وتلقي الرد
         response = model.generate_content(message.text)
         bot.reply_to(message, response.text)
     except Exception as e:
-        bot.reply_to(message, "أهلاً! تأكد من ضبط المفاتيح بشكل صحيح.")
+        # البوت سيخبرك بالخطأ الحقيقي إذا فشل الاتصال بجوجل
+        bot.reply_to(message, f"⚠️ عذراً كريم، حدث خطأ: {str(e)[:100]}")
 
-print("البوت يعمل الآن...")
+print("جاري تشغيل البوت...")
 bot.infinity_polling()
